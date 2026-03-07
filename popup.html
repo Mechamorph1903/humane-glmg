@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AccessAI</title>
+
+    <!--
+      This file is the visual panel that appears when you click the extension icon.
+      Keep it simple - it's just a normal HTML file, same as any webpage.
+      The only rule: no inline JavaScript allowed in Manifest V3.
+      All JS must live in popup.js, never inside <script> tags here.
+    -->
+
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+
+  <body>
+
+    <header>
+      <h1>AccessAI</h1>
+      <p>Your AI reading companion</p>
+    </header>
+
+    <main>
+
+      <!-- PRIMARY ACTIONS -->
+      <!-- These buttons trigger the two main features -->
+      <!-- The actual click logic lives in popup.js, not here -->
+
+      <button id="btn-summarize-page">
+        Summarize Full Page
+      </button>
+
+      <button id="btn-read-selection">
+        Read My Selection
+      </button>
+
+
+      <!-- STATUS INDICATOR -->
+      <!-- This text updates to tell the user what's happening -->
+      <!-- States: idle / thinking / reading / done / error -->
+
+      <p id="status-text">Ready</p>
+
+
+      <!-- AUDIO CONTROLS -->
+      <!-- These control the Web Speech API playback -->
+      <!-- They should probably be hidden until a summary is being read -->
+
+      <div id="audio-controls">
+
+        <button id="btn-pause">Pause</button>
+        <button id="btn-stop">Stop</button>
+
+        <!-- Speed slider: 0.5 = slow, 1 = normal, 2 = fast -->
+        <label for="speed-slider">Speed</label>
+        <input
+          type="range"
+          id="speed-slider"
+          min="0.5"
+          max="2"
+          step="0.1"
+          value="1"
+        />
+
+      </div>
+
+    </main>
+
+    <!--
+      popup.js is loaded here at the bottom of the body.
+      It handles all button clicks and updates this HTML.
+      It also talks to background.js which handles the Claude API call.
+    -->
+    <script src="popup.js"></script>
+
+  </body>
+</html>

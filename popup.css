@@ -1,0 +1,114 @@
+/* popup.css */
+/* Styles for the popup panel that appears when you click the extension icon */
+/*                                                                            */
+/* Rules to keep in mind:                                                     */
+/*   - Chrome popups default to a tiny size - set a fixed width               */
+/*   - High contrast is a must - this is an accessibility tool                */
+/*   - Keep it simple and clean - users may have visual impairments           */
+/*   - Must look good on both dark and light OS themes                        */
+
+
+/* ── RESET & BASE ─────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 320px;         /* Chrome popup fixed width */
+  min-height: 200px;
+  font-family: sans-serif;
+  font-size: 14px;
+
+  /* TODO: choose your color scheme */
+  background-color: ;
+  color: ;
+  padding: 16px;
+}
+
+
+/* ── HEADER ───────────────────────────────────────────────────────────────── */
+
+header {
+  margin-bottom: 16px;
+  /* TODO: style the AccessAI title and subtitle */
+}
+
+header h1 {
+  font-size: 20px;
+  /* TODO */
+}
+
+header p {
+  font-size: 12px;
+  opacity: 0.7;
+  /* TODO */
+}
+
+
+/* ── BUTTONS ──────────────────────────────────────────────────────────────── */
+/* All buttons should have strong contrast and clear focus states              */
+/* Focus states are especially important for keyboard and screen reader users  */
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+
+  /* TODO: background and text colors */
+}
+
+button:hover {
+  /* TODO: slightly lighter or darker on hover */
+}
+
+button:focus {
+  /* TODO: visible focus ring - never remove focus outlines for accessibility */
+  outline: 2px solid ;
+}
+
+
+/* ── STATUS TEXT ──────────────────────────────────────────────────────────── */
+
+#status-text {
+  text-align: center;
+  margin: 12px 0;
+  font-size: 13px;
+  /* TODO: subtle color, maybe italic */
+}
+
+
+/* ── AUDIO CONTROLS ───────────────────────────────────────────────────────── */
+
+#audio-controls {
+  margin-top: 12px;
+  /* TODO: consider hiding this section until speech is active */
+  /* Hint: toggle a CSS class with JS rather than using display:none directly */
+}
+
+#audio-controls button {
+  width: 48%;
+  display: inline-block;
+  /* TODO: make pause and stop sit side by side */
+}
+
+/* Speed slider */
+label[for="speed-slider"] {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  /* TODO */
+}
+
+#speed-slider {
+  width: 100%;
+  margin-top: 4px;
+  /* TODO: style the range input - browsers render these differently */
+}

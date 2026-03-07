@@ -1,0 +1,23 @@
+# API Keys - NEVER commit this
+config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# Node (if anyone installs packages locally)
+node_modules/
+package-lock.json
+
+# Python (in case anyone runs local scripts)
+__pycache__/
+*.pyc
+.env
+
+# Build artifacts
+*.zip
+*.crx
