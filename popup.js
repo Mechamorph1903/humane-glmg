@@ -25,7 +25,7 @@ const statusText        = document.getElementById("status-text")
 // Call this whenever the state changes so the user knows what's happening
 
 function setStatus(message) {
-    statusText.textContent = message
+  statusText.textContent = message
   // TODO: update statusText.textContent with the message
   // Example states to handle: "Ready", "Thinking...", "Reading...", "Done", "Error"
 }
@@ -41,6 +41,7 @@ function setStatus(message) {
 btnSummarizePage.addEventListener("click", async () => {
   setStatus("Reading page...")
 
+  // Get currently active tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
 
   if (!tab || !tab.id) {
@@ -48,6 +49,7 @@ btnSummarizePage.addEventListener("click", async () => {
     return
   }
 
+  // Ask content.js to extract page text
   chrome.tabs.sendMessage(
     tab.id,
     { type: "GET_PAGE_TEXT" },
@@ -64,7 +66,42 @@ btnSummarizePage.addEventListener("click", async () => {
       }
 
       console.log("PAGE TEXT:", response.text.substring(0, 200))
-      setStatus("Page text captured. Ready for summary.")
+      setStatus("Summarizing with AI...")
+
+      chrome.runtime.sendMessage(
+        {
+        type: "GET_SUMMARY",
+        text: response.text
+        },
+        (aiResponse) => {
+
+        if (chrome.runtime.lastError) {
+          console.error("GET_SUMMARY error:", chrome.runtime.lastError.message)
+          setStatus("AI request failed.")
+          return
+        }
+
+        if (!aiResponse || !aiResponse.summary) {
+          setStatus("AI returned no summary.")
+          return
+        }
+
+        console.log("AI SUMMARY:", aiResponse.summary)
+        
+        // Status update for user
+        setStatus("Reading summary...")
+
+        // Trigger speech playback
+        //
+        // NOTE FOR TTS TEAM:
+        // background.js should listen for PLAY_SPEECH and
+        // call speak(message.text)
+        chrome.runtime.sendMessage({
+          type: "PLAY_SPEECH",
+          text: aiResponse.summary
+        })
+        }
+      )
     }
   )
 })
@@ -77,6 +114,9 @@ btnSummarizePage.addEventListener("click", async () => {
 //   3. Get the summary back
 //   4. Pass the summary to speak()
 
+
+//Flow is identical to Summarize Page,
+//except content.js returns only highlighted text.
 btnReadSelection.addEventListener("click", async () => {
   setStatus("Reading selection...")
 
@@ -103,7 +143,38 @@ btnReadSelection.addEventListener("click", async () => {
       }
 
       console.log("SELECTED TEXT:", response.text)
-      setStatus("Selection captured.")
+      setStatus("Summarizing selection...")
+
+      chrome.runtime.sendMessage(
+        {
+        type: "GET_SUMMARY",
+        text: response.text
+        },
+        (aiResponse) => {
+
+          if (chrome.runtime.lastError) {
+            console.error("GET_SUMMARY error:", chrome.runtime.lastError.message)
+            setStatus("AI request failed.")
+            return
+          }
+
+          if (!aiResponse || !aiResponse.summary) {
+            setStatus("AI returned no summary.")
+            return
+          }
+
+          console.log("AI SUMMARY:", aiResponse.summary)
+          setStatus("Reading selection summary...")
+
+                    
+          // Trigger speech playback
+          chrome.runtime.sendMessage({
+            type: "PLAY_SPEECH",
+            text: aiResponse.summary
+          })
+
+        } 
+      )
     }
   )
 })
@@ -112,16 +183,35 @@ btnReadSelection.addEventListener("click", async () => {
 // ─── BUTTON: PAUSE / RESUME ───────────────────────────────────────────────────
 // Toggle between pausing and resuming the speech
 
+// SPEECH CONTROLS
+//
+// popup.js does NOT implement speech itself.
+// It simply sends commands to background.js.
+
+
+// This button currently sends PAUSE_SPEECH only.
+// If resume  is added later, this logic will need to be
+// updated to toggle between pause and resume based on speech state.
+//background.js handles speech playback
 btnPause.addEventListener("click", () => {
-  // TODO
+  setStatus("Speech paused.")
+
+  chrome.runtime.sendMessage({
+    type: "PAUSE_SPEECH"
+  })
 })
 
 
 // ─── BUTTON: STOP ────────────────────────────────────────────────────────────
 // Stop reading entirely and reset
 
+
 btnStop.addEventListener("click", () => {
-  // TODO
+  setStatus("Speech stopped.")
+
+  chrome.runtime.sendMessage({
+    type: "STOP_SPEECH"
+  })
 })
 
 
@@ -129,7 +219,10 @@ btnStop.addEventListener("click", () => {
 // When the user moves the slider, update the speech rate
 
 speedSlider.addEventListener("input", () => {
-  // TODO: pass speedSlider.value to the speak() function
+  chrome.runtime.sendMessage({
+    type: "SET_SPEED",
+    rate: Number(speedSlider.value)
+  })
 })
 
 
