@@ -15,33 +15,47 @@
 // ─── LOAD API KEY FROM CONFIG ─────────────────────────────────────────────────
 // config.js is gitignored - each team member has their own copy locally
 // Never paste your actual API key anywhere else in the code
+import CONFIG from "./config.js"
 
-// TODO: import or reference CONFIG from config.js
-// const API_KEY = CONFIG.apiKey
-
+const apiKey = CONFIG.apiKey;
 
 // ─── THE MAIN FUNCTION: GET SUMMARY FROM CLAUDE ──────────────────────────────
 // This is the function the whole backend role is about.
 // Receives a string of text, returns a plain-language summary string.
 
-async function getSummary(text) {
-  // TODO:
-  // 1. Build the request body with the correct Claude API structure
-  // 2. Call fetch("https://api.anthropic.com/v1/messages", { ... })
-  // 3. Parse the response
-  // 4. Return just the summary text string
-  //
-  // The prompt to send Claude:
-  // "Summarize the following webpage content in 3-5 plain, simple sentences
-  //  that anyone can understand: " + text
-  //
-  // Required headers:
-  //   "x-api-key": API_KEY
-  //   "anthropic-version": "2023-06-01"
-  //   "content-type": "application/json"
-  //
-  // Model to use: "claude-haiku-4-5-20251001"
+async function getSummary(text, userPrompt = "") {
+  const baseInstruction = userPrompt
+    ? userPrompt
+    : "Summarize the following in 3-5 plain simple sentences anyone can understand"
+
+  const fullPrompt = `${baseInstruction}. Reply with plain text only, no markdown, no headings, no bullet points. Text to summarize: ${text}`
+
+	const response = await fetch("https://api.anthropic.com/v1/messages", {
+  method: "POST",
+  headers: {
+    "x-api-key": apiKey,
+    "anthropic-version": "2023-06-01",
+    "content-type": "application/json"
+  },
+  body: JSON.stringify({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 300,
+    messages: [
+  { 
+    role: "user", 
+    content: fullPrompt
+  }
+]
+  })
+
+})
+	let data = await response.json();
+	const result = data.content?.[0]?.text ?? "No Summary Provided";
+	return result;
 }
+
+const data = await getSummary("");
+console.log(data);
 
 
 // ─── THE SPEAK FUNCTION: READ TEXT ALOUD ─────────────────────────────────────

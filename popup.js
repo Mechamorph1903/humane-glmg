@@ -15,6 +15,7 @@
 
 const btnSummarizePage = document.getElementById("btn-summarize-page")
 const btnReadSelection  = document.getElementById("btn-read-selection")
+const userPrompt = document.getElementById("user-prompt")
 const btnPause          = document.getElementById("btn-pause")
 const btnStop           = document.getElementById("btn-stop")
 const speedSlider       = document.getElementById("speed-slider")
@@ -91,3 +92,7 @@ speedSlider.addEventListener("input", () => {
 //
 // The other file receives this with chrome.runtime.onMessage.addListener()
 // You'll see that pattern in background.js and content.js
+
+
+//test
+console.log("popup loaded")

@@ -1,0 +1,21 @@
+{
+  "name": "lazey",
+  "version": "1.0.0",
+  "description": "Honeywell Hackathon for NSBE 26. AI powered Screen reader",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mechamorph1903/humane-glmg.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Mechamorph1903/humane-glmg/issues"
+  },
+  "homepage": "https://github.com/Mechamorph1903/humane-glmg#readme"
+}
