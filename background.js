@@ -18,29 +18,79 @@
 
 // TODO: import or reference CONFIG from config.js
 // const API_KEY = CONFIG.apiKey
+importScripts("config.js")
 
 
 // ─── THE MAIN FUNCTION: GET SUMMARY FROM CLAUDE ──────────────────────────────
 // This is the function the whole backend role is about.
 // Receives a string of text, returns a plain-language summary string.
 
+//I did some code to test my popups in the console
+// AI SUMMARY FUNCTION
+// This function sends webpage text to Claude
+// and returns a plain-language summary.
+//
+// Called when popup.js sends:
+// { type: "GET_SUMMARY", text: "..." }
+//
+// NOTE FOR TEAM: You can also delete all this and write your actual getsummary function.
+// I just used this to test popup.jss
+// This part is the AI integration layer.
+// If you want to adjust prompt quality or model settings, this is the place to do it.
+
+
 async function getSummary(text) {
-  // TODO:
-  // 1. Build the request body with the correct Claude API structure
-  // 2. Call fetch("https://api.anthropic.com/v1/messages", { ... })
-  // 3. Parse the response
-  // 4. Return just the summary text string
-  //
-  // The prompt to send Claude:
-  // "Summarize the following webpage content in 3-5 plain, simple sentences
-  //  that anyone can understand: " + text
-  //
-  // Required headers:
-  //   "x-api-key": API_KEY
-  //   "anthropic-version": "2023-06-01"
-  //   "content-type": "application/json"
-  //
-  // Model to use: "claude-haiku-4-5-20251001"
+
+  // Prompt sent to Claude
+  const prompt =
+    "Summarize the following webpage content in 3-5 plain simple sentences anyone can understand:\n\n" +
+    text.substring(0, 12000)
+
+  // Claude Messages API request
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": CONFIG.apiKey,
+      "anthropic-version": "2023-06-01",
+          
+      // Required for Chrome extensions calling Claude directly
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 300,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    })
+  })
+
+  const data = await response.json()
+
+  // Helpful debug logs when creating popup.
+  console.log("CLAUDE RESPONSE:", data)
+  console.log("CLAUDE STATUS:", response.status)
+
+  // Basic validation of Claude response
+  if (!data || !data.content) {
+    console.error("Claude raw response:", data)
+    throw new Error("Claude response invalid")
+}
+
+const textBlock = data.content.find(block => block.type === "text")
+
+if (!textBlock) {
+  console.error("Claude content blocks:", data.content)
+  throw new Error("Claude returned no text block")
+}
+
+// Return summary text to popup.js
+return textBlock.text
+
 }
 
 
@@ -72,13 +122,19 @@ function stopSpeech() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
+  // AI SUMMARY REQUEST
+  // Called when popup.js sends page or selection text
   if (message.type === "GET_SUMMARY") {
-    // TODO:
-    // 1. Call getSummary(message.text)
-    // 2. Send the result back with sendResponse({ summary: result })
-    // Hint: getSummary is async so you'll need to handle the promise correctly
+    getSummary(message.text)
+     .then(summary => {
+      sendResponse({ summary })
+    })
+    .catch(err => {
+      console.error("Claude error:", err)
+      sendResponse({ summary: null })
+    })
   }
 
   // IMPORTANT: return true to keep the message channel open for async response
-  return true
+  return true 
 })
