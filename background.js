@@ -23,6 +23,20 @@ const apiKey = CONFIG.apiKey;
 // This is the function the whole backend role is about.
 // Receives a string of text, returns a plain-language summary string.
 
+//I did some code to test my popups in the console
+// AI SUMMARY FUNCTION
+// This function sends webpage text to Claude
+// and returns a plain-language summary.
+//
+// Called when popup.js sends:
+// { type: "GET_SUMMARY", text: "..." }
+//
+// NOTE FOR TEAM: You can also delete all this and write your actual getsummary function.
+// I just used this to test popup.jss
+// This part is the AI integration layer.
+// If you want to adjust prompt quality or model settings, this is the place to do it.
+
+
 async function getSummary(text, userPrompt = "") {
   const baseInstruction = userPrompt
     ? userPrompt
@@ -86,13 +100,19 @@ function stopSpeech() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
+  // AI SUMMARY REQUEST
+  // Called when popup.js sends page or selection text
   if (message.type === "GET_SUMMARY") {
-    // TODO:
-    // 1. Call getSummary(message.text)
-    // 2. Send the result back with sendResponse({ summary: result })
-    // Hint: getSummary is async so you'll need to handle the promise correctly
+    getSummary(message.text)
+     .then(summary => {
+      sendResponse({ summary })
+    })
+    .catch(err => {
+      console.error("Claude error:", err)
+      sendResponse({ summary: null })
+    })
   }
 
   // IMPORTANT: return true to keep the message channel open for async response
-  return true
+  return true 
 })
