@@ -1,19 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "AccessAI",
+  "name": "Lazey",
   "version": "1.0",
   "description": "AI-powered screen reader that summarizes any webpage and reads it aloud",
 
- 
   "background": {
     "service_worker": "background.js"
   },
 
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_icon": "extension-pic.png"
   },
 
+  
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -22,8 +22,12 @@
   ],
 
   "permissions": [
+    "activeTab",        
+    "scripting",        
+    "storage"           
   ],
 
   "host_permissions": [
   ]
 }
+  

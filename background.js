@@ -15,11 +15,9 @@
 // ─── LOAD API KEY FROM CONFIG ─────────────────────────────────────────────────
 // config.js is gitignored - each team member has their own copy locally
 // Never paste your actual API key anywhere else in the code
+import CONFIG from "./config.js"
 
-// TODO: import or reference CONFIG from config.js
-// const API_KEY = CONFIG.apiKey
-importScripts("config.js")
-
+const apiKey = CONFIG.apiKey;
 
 // ─── THE MAIN FUNCTION: GET SUMMARY FROM CLAUDE ──────────────────────────────
 // This is the function the whole backend role is about.
@@ -39,59 +37,39 @@ importScripts("config.js")
 // If you want to adjust prompt quality or model settings, this is the place to do it.
 
 
-async function getSummary(text) {
+async function getSummary(text, userPrompt = "") {
+  const baseInstruction = userPrompt
+    ? userPrompt
+    : "Summarize the following in 3-5 plain simple sentences anyone can understand"
 
-  // Prompt sent to Claude
-  const prompt =
-    "Summarize the following webpage content in 3-5 plain simple sentences anyone can understand:\n\n" +
-    text.substring(0, 12000)
+  const fullPrompt = `${baseInstruction}. Reply with plain text only, no markdown, no headings, no bullet points. Text to summarize: ${text}`
 
-  // Claude Messages API request
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": CONFIG.apiKey,
-      "anthropic-version": "2023-06-01",
-          
-      // Required for Chrome extensions calling Claude directly
-      "anthropic-dangerous-direct-browser-access": "true"
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 300,
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ]
-    })
+	const response = await fetch("https://api.anthropic.com/v1/messages", {
+  method: "POST",
+  headers: {
+    "x-api-key": apiKey,
+    "anthropic-version": "2023-06-01",
+    "content-type": "application/json"
+  },
+  body: JSON.stringify({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 300,
+    messages: [
+  { 
+    role: "user", 
+    content: fullPrompt
+  }
+]
   })
 
-  const data = await response.json()
-
-  // Helpful debug logs when creating popup.
-  console.log("CLAUDE RESPONSE:", data)
-  console.log("CLAUDE STATUS:", response.status)
-
-  // Basic validation of Claude response
-  if (!data || !data.content) {
-    console.error("Claude raw response:", data)
-    throw new Error("Claude response invalid")
+})
+	let data = await response.json();
+	const result = data.content?.[0]?.text ?? "No Summary Provided";
+	return result;
 }
 
-const textBlock = data.content.find(block => block.type === "text")
-
-if (!textBlock) {
-  console.error("Claude content blocks:", data.content)
-  throw new Error("Claude returned no text block")
-}
-
-// Return summary text to popup.js
-return textBlock.text
-
-}
+const data = await getSummary("");
+console.log(data);
 
 
 // ─── THE SPEAK FUNCTION: READ TEXT ALOUD ─────────────────────────────────────
