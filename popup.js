@@ -13,22 +13,59 @@
 // ─── GRAB THE HTML ELEMENTS WE NEED TO CONTROL ───────────────────────────────
 // These match the id="" values in popup.html
 
-const btnSummarizePage = document.getElementById("btn-summarize-page")
+const btnSummarizePage  = document.getElementById("btn-summarize-page")
 const btnReadSelection  = document.getElementById("btn-read-selection")
-const userPrompt = document.getElementById("user-prompt")
+const userPrompt        = document.getElementById("user-prompt")
 const btnPause          = document.getElementById("btn-pause")
 const btnStop           = document.getElementById("btn-stop")
 const speedSlider       = document.getElementById("speed-slider")
 const statusText        = document.getElementById("status-text")
+const summaryBox        = document.getElementById("summary-box")
 
 
 // ─── HELPER: UPDATE STATUS MESSAGE ───────────────────────────────────────────
 // Call this whenever the state changes so the user knows what's happening
 
 function setStatus(message) {
-  // TODO: update statusText.textContent with the message
   // Example states to handle: "Ready", "Thinking...", "Reading...", "Done", "Error"
+  statusText.textContent =  message;
+  return
 }
+
+//Promise Helper Functions
+const getPageText = (id) => {
+  return new Promise((resolve) => {
+    chrome.tabs.sendMessage(
+      id,
+      {type: "GET_PAGE_TEXT"},
+      (response) => {
+        resolve(response.text);
+      }
+    )
+  })
+}
+const getSelectedText = (id) => {
+  return new Promise((resolve) => {
+    chrome.tabs.sendMessage(
+      id,
+      {type: "GET_SELECTED_TEXT"},
+      (response) => {
+        resolve(response.text);
+      }
+    )
+  })
+}
+const getSummaryFromBackground = (summaryText, userPrompt) => {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      {type: "GET_SUMMARY", text: summaryText, prompt: userPrompt},
+      (response) => {
+        resolve(response.summary);
+      }
+    )
+  })
+}
+
 
 
 // ─── BUTTON: SUMMARIZE FULL PAGE ─────────────────────────────────────────────
@@ -40,6 +77,17 @@ function setStatus(message) {
 
 btnSummarizePage.addEventListener("click", async () => {
   // TODO
+  setStatus("Reading...")
+  const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+  const pageText = await getPageText(tab.id);
+  const summary = await getSummaryFromBackground(pageText, userPrompt);
+  setStatus("Summary Ready.")
+  setTimeout(setStatus("Reading..."), 2000);
+  speak(summary);
+  summaryBox.textContent = summary;
+  
+
+
 })
 
 
@@ -52,6 +100,14 @@ btnSummarizePage.addEventListener("click", async () => {
 
 btnReadSelection.addEventListener("click", async () => {
   // TODO
+  setStatus("Reading...")
+  const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+  const pageText = await getSelectedText(tab.id);
+  const summary = await getSummaryFromBackground(pageText, userPrompt);
+  setStatus("Summary Ready.")
+  setTimeout(setStatus("Reading..."), 2000);
+  speak(summary);
+  summaryBox.textContent = summary;
 })
 
 

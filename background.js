@@ -85,14 +85,14 @@ function stopSpeech() {
 // This listener receives it, calls getSummary(), and sends the result back
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-
+  //receives message of text to summarize, calls the getSummary function which is async
+  //so returns promise object, this is worked around by using .then() which waits for a 
+  //value then performs another action 
   if (message.type === "GET_SUMMARY") {
-    // TODO:
-    // 1. Call getSummary(message.text)
-    // 2. Send the result back with sendResponse({ summary: result })
-    // Hint: getSummary is async so you'll need to handle the promise correctly
+    getSummary(message.text, message.prompt).then((response) => {
+      sendResponse({ summary: response });
+    });
   }
-
   // IMPORTANT: return true to keep the message channel open for async response
-  return true
-})
+  return true;
+});

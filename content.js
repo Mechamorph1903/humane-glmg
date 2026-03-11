@@ -21,23 +21,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // ── REQUEST: GET FULL PAGE TEXT ──
   if (message.type === "GET_PAGE_TEXT") {
-    // TODO: grab all visible text from the page
-    // Hint: document.body.innerText gives you everything
-    // Tip: trim it and maybe limit the length so Claude isn't overwhelmed
-    const pageText = "" // replace this
-    sendResponse({ text: pageText })
+    // grab all visible text from the page
+    const pageText = document.body.innerText.trim().slice(0, 5000);
+    sendResponse({ text: pageText });
   }
 
   // ── REQUEST: GET SELECTED TEXT ──
   if (message.type === "GET_SELECTED_TEXT") {
     // TODO: grab only what the user has highlighted
-    // Hint: window.getSelection().toString() is all you need
-    const selectedText = "" // replace this
-    sendResponse({ text: selectedText })
+    const selected = window.getSelection().toString().trim();
+    sendResponse({ text: selected });
   }
 
-  // IMPORTANT: return true here to tell Chrome this is async
-  // Without this line, sendResponse won't work
   return true
 })
 
