@@ -50,8 +50,33 @@ async function getSummary(text, userPrompt = "") {
   })
 
   if (!response.ok) {
-    const errBody = await response.text()
-    throw new Error(`API ${response.status}: ${errBody}`)
+    let detail = ""
+    try {
+      const contentType = response.headers.get("content-type") || ""
+      if (contentType.includes("application/json")) {
+        const json = await response.json()
+        const msg =
+          (json && typeof json === "object" && (json.error?.message || json.message)) ||
+          JSON.stringify(json)
+        detail = typeof msg === "string" ? msg : String(msg)
+      } else {
+        detail = await response.text()
+      }
+    } catch (e) {
+      // Fall back to status text if body parsing fails
+      detail = response.statusText || ""
+    }
+
+    // Strip basic HTML tags to avoid surfacing raw markup
+    if (detail) {
+      detail = detail.replace(/<[^>]*>/g, "")
+      const maxLen = 300
+      if (detail.length > maxLen) {
+        detail = detail.slice(0, maxLen) + "..."
+      }
+    }
+
+    throw new Error(`API ${response.status}: ${detail || "Unknown error"}`)
   }
 
   const data = await response.json()
