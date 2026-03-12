@@ -1,7 +1,11 @@
 // Prevent double-initialization when injected programmatically on a tab
 // that already has the content script from the manifest.
-if (!window._accessaiLoaded) {
-window._accessaiLoaded = true
+if (!globalThis.__accessaiLoaded) {
+  Object.defineProperty(globalThis, "__accessaiLoaded", {
+    value: true,
+    writable: false,
+    configurable: false,
+  })
 
 console.log("CONTENT SCRIPT LOADED")
 // content.js
