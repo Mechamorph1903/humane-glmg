@@ -23,7 +23,9 @@ console.log("CONTENT SCRIPT LOADED")
 // Web Speech API is built into Chrome - no API key or install needed.
 // This is the only context (page/content script) where it is available.
 
-let currentRate = 1  // tracks speed set by slider; updated by SET_SPEED messages
+let currentRate = 1    // tracks speed set by slider; updated by SET_SPEED messages
+let lastUtteranceText = ""  // saved so SET_SPEED can restart at new rate
+let speakTimer = null  // guards against rapid-fire speak() calls
 
 // Voices load asynchronously — cache them once they're ready
 let cachedVoices = []
@@ -44,20 +46,20 @@ function getBestVoice() {
 }
 
 function speak(text, rate = currentRate) {
-  // Save text so SET_SPEED can restart speech if needed
-  window._lastUtteranceText = text
+  lastUtteranceText = text
 
   // Cancel anything already playing so we start fresh
   window.speechSynthesis.cancel()
 
+  // Clear any pending speak timeout to prevent stale utterances
+  if (speakTimer) clearTimeout(speakTimer)
+
   // Firefox ignores speak() called immediately after cancel().
   // A brief delay lets the engine reset before queuing new speech.
-  setTimeout(() => {
+  speakTimer = setTimeout(() => {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = rate
 
-    // Pick the most natural-sounding English voice available in the browser.
-    // Prefer local (offline) voices first, then any English voice, then whatever is available.
     const voice = getBestVoice()
     if (voice) utterance.voice = voice
 
@@ -116,7 +118,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     currentRate = message.rate
     // If speech is active, restart it at the new speed
     if (window.speechSynthesis.speaking) {
-      const remaining = window._lastUtteranceText
+      const remaining = lastUtteranceText
       if (remaining) speak(remaining, currentRate)
     }
     sendResponse({ ok: true })

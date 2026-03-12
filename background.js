@@ -13,21 +13,12 @@
 //test
 
 // ─── LOAD API KEY FROM CONFIG ─────────────────────────────────────────────────
-// Lazy-loaded to avoid top-level await, which breaks in Firefox classic-script
-// mode (event pages on Firefox < 120).  Dynamic import() works in both module
-// and classic contexts in all modern browsers.
+// Static import — works reliably in both Chrome and Firefox module service workers.
+// config.js is gitignored; each team member creates their own copy locally.
+import CONFIG from "./config.js"
 
-let CONFIG = null
-
-async function getConfig() {
-  if (CONFIG) return CONFIG
-  try {
-    const mod = await import("./config.js")
-    CONFIG = mod.default
-  } catch {
-    CONFIG = self.CONFIG
-  }
-  return CONFIG
+if (!CONFIG || !CONFIG.apiKey) {
+  console.error("API key not found. Make sure config.js exists with your apiKey.")
 }
 
 
@@ -36,7 +27,6 @@ async function getConfig() {
 // Called when popup.js sends: { type: "GET_SUMMARY", text: "..." }
 
 async function getSummary(text, userPrompt = "") {
-  const config = await getConfig()
 
   const baseInstruction = userPrompt
     ? userPrompt
@@ -47,7 +37,7 @@ async function getSummary(text, userPrompt = "") {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      "x-api-key": config.apiKey,
+      "x-api-key": CONFIG.apiKey,
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
       "anthropic-dangerous-direct-browser-access": "true"
