@@ -33,16 +33,15 @@ cd humane-glmg
 
 ### 2. Create your config file
 
-Create a file named `config.js` in the project root with your Anthropic API key:
+Create a file named `config.json` in the project root with your Anthropic API key:
 
-```js
-const CONFIG = {
-  apiKey: "sk-ant-your-api-key-here"
-};
-export default CONFIG;
+```json
+{
+  "apiKey": "sk-ant-your-api-key-here"
+}
 ```
 
-> **Note:** `config.js` is gitignored and must be created manually. Never commit your API key.
+> **Note:** `config.json` is gitignored and must be created manually. Never commit your API key.
 
 ### 3. Load the extension
 

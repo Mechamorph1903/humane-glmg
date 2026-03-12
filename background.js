@@ -12,22 +12,18 @@
 // It talks to popup.js using chrome.runtime.onMessage.addListener()
 
 // ─── LOAD API KEY FROM CONFIG ─────────────────────────────────────────────────
-// Chrome: ES module service worker → dynamic import() resolves config.js
-// Firefox: classic script via scripts array → config.js already ran, self.CONFIG is set
-// We lazy-load so there's no top-level await (breaks classic scripts).
+// fetch() works identically in Chrome service workers and Firefox background
+// scripts — no import compatibility issues.  config.json is gitignored.
 
 let CONFIG = null
 
 async function getConfig() {
   if (CONFIG) return CONFIG
-  try {
-    const mod = await import(chrome.runtime.getURL("config.js"))
-    CONFIG = mod.default || mod.CONFIG
-  } catch {
-    CONFIG = self.CONFIG
-  }
+  const url = chrome.runtime.getURL("config.json")
+  const res = await fetch(url)
+  CONFIG = await res.json()
   if (!CONFIG || !CONFIG.apiKey) {
-    throw new Error("Missing API key. Create config.js with your Anthropic key.")
+    throw new Error("Missing API key. Create config.json with your Anthropic key.")
   }
   return CONFIG
 }
