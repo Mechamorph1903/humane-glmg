@@ -83,6 +83,11 @@ function pauseSpeech() {
 }
 
 function stopSpeech() {
+  // Cancel any pending delayed speak() call so Stop is reliable
+  if (speakTimer) {
+    clearTimeout(speakTimer)
+    speakTimer = null
+  }
   window.speechSynthesis.cancel()
 }
 
