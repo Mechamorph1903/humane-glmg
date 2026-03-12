@@ -14,90 +14,6 @@ console.log("CONTENT SCRIPT LOADED")
 // It talks to popup.js using chrome.runtime.onMessage / sendMessage
 
 
-// ─── MINI SUMMARY PANEL (injected onto the page) ────────────────────────────
-// Creates or updates a small floating panel at the bottom-right of the viewport
-// so the user can always see & re-read the summary even if the popup closes.
-
-let summaryPanel = null
-
-function showSummaryPanel(text) {
-  if (!summaryPanel) {
-    summaryPanel = document.createElement("div")
-    summaryPanel.id = "accessai-summary-panel"
-
-    // Fixed overlay styling
-    Object.assign(summaryPanel.style, {
-      position: "fixed",
-      bottom: "16px",
-      right: "16px",
-      width: "340px",
-      maxHeight: "260px",
-      background: "#1a1a2e",
-      color: "#e0e0e0",
-      fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "13px",
-      lineHeight: "1.6",
-      borderRadius: "10px",
-      boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
-      zIndex: "2147483647",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden",
-      border: "1px solid #333"
-    })
-
-    // Header bar with title + close button
-    const header = document.createElement("div")
-    Object.assign(header.style, {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: "8px 12px",
-      background: "#2d7ff9",
-      color: "white",
-      fontSize: "13px",
-      fontWeight: "bold",
-      flexShrink: "0"
-    })
-    header.textContent = "AccessAI Summary"
-
-    const closeBtn = document.createElement("button")
-    closeBtn.textContent = "X"
-    Object.assign(closeBtn.style, {
-      background: "transparent",
-      border: "none",
-      color: "white",
-      fontSize: "14px",
-      cursor: "pointer",
-      padding: "0 2px",
-      fontWeight: "bold"
-    })
-    closeBtn.addEventListener("click", () => {
-      summaryPanel.remove()
-      summaryPanel = null
-    })
-    header.appendChild(closeBtn)
-
-    // Scrollable text body
-    const body = document.createElement("div")
-    body.id = "accessai-summary-body"
-    Object.assign(body.style, {
-      padding: "10px 12px",
-      overflowY: "auto",
-      flex: "1",
-      whiteSpace: "pre-wrap"
-    })
-
-    summaryPanel.appendChild(header)
-    summaryPanel.appendChild(body)
-    document.documentElement.appendChild(summaryPanel)
-  }
-
-  // Update content
-  const body = summaryPanel.querySelector("#accessai-summary-body")
-  body.textContent = text
-}
-
 // ─── TEXT-TO-SPEECH SYSTEM ────────────────────────────────────────────────────
 // Web Speech API is built into Chrome - no API key or install needed.
 // This is the only context (page/content script) where it is available.
@@ -177,7 +93,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // ── SPEECH COMMANDS (forwarded here from background.js) ──
   if (message.type === "PLAY_SPEECH") {
-    showSummaryPanel(message.text)
     speak(message.text)
     sendResponse({ ok: true })
   }
@@ -286,8 +201,7 @@ document.addEventListener("mouseup", (event) => {
       // If AI fails or returns nothing, exit safely
       if (!aiResponse || !aiResponse.summary) return
 
-      // Show summary panel on the page and read aloud
-      showSummaryPanel(aiResponse.summary)
+      // Read the summary aloud
       speak(aiResponse.summary)
 
     })
