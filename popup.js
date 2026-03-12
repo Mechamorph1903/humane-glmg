@@ -37,6 +37,22 @@ function showSummary(text) {
 }
 
 
+// ─── HELPER: ENSURE CONTENT SCRIPT IS INJECTED ─────────────────────────────
+// Tabs open before the extension loaded won't have content.js.
+// Programmatically inject it so messaging doesn't fail.
+
+async function ensureContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"]
+    })
+  } catch {
+    // Restricted page (chrome://, about:, etc.) — injection not possible
+  }
+}
+
+
 // ─── BUTTON: SUMMARIZE FULL PAGE ─────────────────────────────────────────────
 // When clicked:
 //   1. Tell content.js to grab all the text on the current page
@@ -55,7 +71,8 @@ btnSummarizePage.addEventListener("click", async () => {
     return
   }
 
-  // Ask content.js to extract page text
+  // Ensure content script is loaded, then ask for page text
+  await ensureContentScript(tab.id)
   chrome.tabs.sendMessage(
     tab.id,
     { type: "GET_PAGE_TEXT" },
@@ -133,6 +150,7 @@ btnReadSelection.addEventListener("click", async () => {
     return
   }
 
+  await ensureContentScript(tab.id)
   chrome.tabs.sendMessage(
     tab.id,
     { type: "GET_SELECTED_TEXT" },

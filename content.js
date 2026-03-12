@@ -1,3 +1,8 @@
+// Prevent double-initialization when injected programmatically on a tab
+// that already has the content script from the manifest.
+if (!window._accessaiLoaded) {
+window._accessaiLoaded = true
+
 console.log("CONTENT SCRIPT LOADED")
 // content.js
 // This file is injected into every webpage the user visits.
@@ -217,3 +222,5 @@ document.addEventListener("mouseup", (event) => {
   document.documentElement.appendChild(floatingButton)
 
 })
+
+} // end guard: window._accessaiLoaded
