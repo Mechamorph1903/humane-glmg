@@ -10,15 +10,26 @@
 //   background.js (the service worker) is the safe place for fetch() calls.
 //
 // It talks to popup.js using chrome.runtime.onMessage.addListener()
-//test
 
 // ─── LOAD API KEY FROM CONFIG ─────────────────────────────────────────────────
-// Static import — works reliably in both Chrome and Firefox module service workers.
-// config.js is gitignored; each team member creates their own copy locally.
-import CONFIG from "./config.js"
+// Chrome: ES module service worker → dynamic import() resolves config.js
+// Firefox: classic script via scripts array → config.js already ran, self.CONFIG is set
+// We lazy-load so there's no top-level await (breaks classic scripts).
 
-if (!CONFIG || !CONFIG.apiKey) {
-  console.error("API key not found. Make sure config.js exists with your apiKey.")
+let CONFIG = null
+
+async function getConfig() {
+  if (CONFIG) return CONFIG
+  try {
+    const mod = await import(chrome.runtime.getURL("config.js"))
+    CONFIG = mod.default || mod.CONFIG
+  } catch {
+    CONFIG = self.CONFIG
+  }
+  if (!CONFIG || !CONFIG.apiKey) {
+    throw new Error("Missing API key. Create config.js with your Anthropic key.")
+  }
+  return CONFIG
 }
 
 
@@ -27,9 +38,7 @@ if (!CONFIG || !CONFIG.apiKey) {
 // Called when popup.js sends: { type: "GET_SUMMARY", text: "..." }
 
 async function getSummary(text, userPrompt = "") {
-  if (!CONFIG || !CONFIG.apiKey) {
-    throw new Error("Missing API key. Create config.js with your Anthropic key.")
-  }
+  const config = await getConfig()
 
   const baseInstruction = userPrompt
     ? userPrompt
@@ -40,7 +49,7 @@ async function getSummary(text, userPrompt = "") {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      "x-api-key": CONFIG.apiKey,
+      "x-api-key": config.apiKey,
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
       "anthropic-dangerous-direct-browser-access": "true"
@@ -66,11 +75,9 @@ async function getSummary(text, userPrompt = "") {
         detail = await response.text()
       }
     } catch (e) {
-      // Fall back to status text if body parsing fails
       detail = response.statusText || ""
     }
 
-    // Strip basic HTML tags to avoid surfacing raw markup
     if (detail) {
       detail = detail.replace(/<[^>]*>/g, "")
       const maxLen = 300
