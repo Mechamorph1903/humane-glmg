@@ -19,6 +19,7 @@ const userPrompt = document.getElementById("user-prompt")
 const btnPause          = document.getElementById("btn-pause")
 const btnStop           = document.getElementById("btn-stop")
 const speedSlider       = document.getElementById("speed-slider")
+const languageSelect = document.getElementById("language-select")
 const statusText        = document.getElementById("status-text")
 const summaryBox        = document.getElementById("summary-box")
 const summaryText       = document.getElementById("summary-text")
@@ -95,7 +96,8 @@ btnSummarizePage.addEventListener("click", async () => {
         {
           type: "GET_SUMMARY",
           text: response.text,
-          userPrompt: userPrompt.value.trim()
+          userPrompt: userPrompt.value.trim(),
+          language: languageSelect.value
         },
         (aiResponse) => {
 
@@ -173,7 +175,8 @@ btnReadSelection.addEventListener("click", async () => {
         {
           type: "GET_SUMMARY",
           text: response.text,
-          userPrompt: userPrompt.value.trim()
+          userPrompt: userPrompt.value.trim(),
+          language: languageSelect.value
         },
         (aiResponse) => {
 
