@@ -20,6 +20,8 @@ const btnPause          = document.getElementById("btn-pause")
 const btnStop           = document.getElementById("btn-stop")
 const speedSlider       = document.getElementById("speed-slider")
 const statusText        = document.getElementById("status-text")
+const summaryBox        = document.getElementById("summary-box")
+const summaryText       = document.getElementById("summary-text")
 
 
 // ─── HELPER: UPDATE STATUS MESSAGE ───────────────────────────────────────────
@@ -27,8 +29,27 @@ const statusText        = document.getElementById("status-text")
 
 function setStatus(message) {
   statusText.textContent = message
-  // TODO: update statusText.textContent with the message
-  // Example states to handle: "Ready", "Thinking...", "Reading...", "Done", "Error"
+}
+
+function showSummary(text) {
+  summaryText.textContent = text
+  summaryBox.hidden = false
+}
+
+
+// ─── HELPER: ENSURE CONTENT SCRIPT IS INJECTED ─────────────────────────────
+// Tabs open before the extension loaded won't have content.js.
+// Programmatically inject it so messaging doesn't fail.
+
+async function ensureContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"]
+    })
+  } catch {
+    // Restricted page (chrome://, about:, etc.) — injection not possible
+  }
 }
 
 
@@ -50,7 +71,8 @@ btnSummarizePage.addEventListener("click", async () => {
     return
   }
 
-  // Ask content.js to extract page text
+  // Ensure content script is loaded, then ask for page text
+  await ensureContentScript(tab.id)
   chrome.tabs.sendMessage(
     tab.id,
     { type: "GET_PAGE_TEXT" },
@@ -71,36 +93,36 @@ btnSummarizePage.addEventListener("click", async () => {
 
       chrome.runtime.sendMessage(
         {
-        type: "GET_SUMMARY",
-        text: response.text
+          type: "GET_SUMMARY",
+          text: response.text,
+          userPrompt: userPrompt.value.trim()
         },
         (aiResponse) => {
 
-        if (chrome.runtime.lastError) {
-          console.error("GET_SUMMARY error:", chrome.runtime.lastError.message)
-          setStatus("AI request failed.")
-          return
-        }
+          if (chrome.runtime.lastError) {
+            console.error("GET_SUMMARY error:", chrome.runtime.lastError.message)
+            setStatus("AI request failed.")
+            return
+          }
 
-        if (!aiResponse || !aiResponse.summary) {
-          setStatus("AI returned no summary.")
-          return
-        }
+          if (!aiResponse || !aiResponse.summary) {
+            setStatus(aiResponse?.error || "AI returned no summary.")
+            return
+          }
 
-        console.log("AI SUMMARY:", aiResponse.summary)
-        
-        // Status update for user
-        setStatus("Reading summary...")
+          console.log("AI SUMMARY:", aiResponse.summary)
 
-        // Trigger speech playback
-        //
-        // NOTE FOR TTS TEAM:
-        // background.js should listen for PLAY_SPEECH and
-        // call speak(message.text)
-        chrome.runtime.sendMessage({
-          type: "PLAY_SPEECH",
-          text: aiResponse.summary
-        })
+          // Show summary text in the popup
+          showSummary(aiResponse.summary)
+
+          // Status update for user
+          setStatus("Reading summary...")
+
+          // Trigger speech playback
+          chrome.runtime.sendMessage({
+            type: "PLAY_SPEECH",
+            text: aiResponse.summary
+          })
         }
       )
     }
@@ -128,6 +150,7 @@ btnReadSelection.addEventListener("click", async () => {
     return
   }
 
+  await ensureContentScript(tab.id)
   chrome.tabs.sendMessage(
     tab.id,
     { type: "GET_SELECTED_TEXT" },
@@ -148,8 +171,9 @@ btnReadSelection.addEventListener("click", async () => {
 
       chrome.runtime.sendMessage(
         {
-        type: "GET_SUMMARY",
-        text: response.text
+          type: "GET_SUMMARY",
+          text: response.text,
+          userPrompt: userPrompt.value.trim()
         },
         (aiResponse) => {
 
@@ -160,21 +184,23 @@ btnReadSelection.addEventListener("click", async () => {
           }
 
           if (!aiResponse || !aiResponse.summary) {
-            setStatus("AI returned no summary.")
+            setStatus(aiResponse?.error || "AI returned no summary.")
             return
           }
 
           console.log("AI SUMMARY:", aiResponse.summary)
+
+          // Show summary text in the popup
+          showSummary(aiResponse.summary)
+
           setStatus("Reading selection summary...")
 
-                    
           // Trigger speech playback
           chrome.runtime.sendMessage({
             type: "PLAY_SPEECH",
             text: aiResponse.summary
           })
-
-        } 
+        }
       )
     }
   )
@@ -182,24 +208,21 @@ btnReadSelection.addEventListener("click", async () => {
 
 
 // ─── BUTTON: PAUSE / RESUME ───────────────────────────────────────────────────
-// Toggle between pausing and resuming the speech
+// Sends PAUSE_SPEECH to background.js, which forwards to content.js.
+// content.js toggles pause/resume based on current speechSynthesis state.
 
-// SPEECH CONTROLS
-//
-// popup.js does NOT implement speech itself.
-// It simply sends commands to background.js.
-
-
-// This button currently sends PAUSE_SPEECH only.
-// If resume  is added later, this logic will need to be
-// updated to toggle between pause and resume based on speech state.
-//background.js handles speech playback
 btnPause.addEventListener("click", () => {
-  setStatus("Speech paused.")
+  const isPaused = btnPause.textContent.trim() === "Resume"
 
-  chrome.runtime.sendMessage({
-    type: "PAUSE_SPEECH"
-  })
+  if (isPaused) {
+    btnPause.textContent = "Pause"
+    setStatus("Resuming...")
+  } else {
+    btnPause.textContent = "Resume"
+    setStatus("Paused.")
+  }
+
+  chrome.runtime.sendMessage({ type: "PAUSE_SPEECH" })
 })
 
 
@@ -208,11 +231,10 @@ btnPause.addEventListener("click", () => {
 
 
 btnStop.addEventListener("click", () => {
-  setStatus("Speech stopped.")
+  btnPause.textContent = "Pause"
+  setStatus("Stopped.")
 
-  chrome.runtime.sendMessage({
-    type: "STOP_SPEECH"
-  })
+  chrome.runtime.sendMessage({ type: "STOP_SPEECH" })
 })
 
 
