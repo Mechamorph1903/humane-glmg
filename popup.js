@@ -16,12 +16,24 @@
 const btnSummarizePage = document.getElementById("btn-summarize-page")
 const btnReadSelection  = document.getElementById("btn-read-selection")
 const userPrompt = document.getElementById("user-prompt")
-const btnPause          = document.getElementById("btn-pause")
-const btnStop           = document.getElementById("btn-stop")
-const speedSlider       = document.getElementById("speed-slider")
-const statusText        = document.getElementById("status-text")
-const summaryBox        = document.getElementById("summary-box")
-const summaryText       = document.getElementById("summary-text")
+const btnPause = document.getElementById("btn-pause")
+const btnStop = document.getElementById("btn-stop")
+const speedSlider = document.getElementById("speed-slider")
+const statusText = document.getElementById("status-text")
+const summaryText = document.getElementById("summary-text")
+const summaryContainer = document.getElementById("summary-container")
+const toggleSummaryBtn = document.getElementById("toggle-summary")
+
+
+//toggle go summary text
+toggleSummaryBtn.addEventListener("click", () => {
+  summaryContainer.classList.toggle("hidden")
+
+  toggleSummaryBtn.textContent =
+    summaryContainer.classList.contains("hidden")
+      ? "Show Summary"
+      : "Hide Summary"
+})
 
 
 // ─── HELPER: UPDATE STATUS MESSAGE ───────────────────────────────────────────
@@ -112,17 +124,24 @@ btnSummarizePage.addEventListener("click", async () => {
 
           console.log("AI SUMMARY:", aiResponse.summary)
 
-          // Show summary text in the popup
-          showSummary(aiResponse.summary)
+        console.log("AI SUMMARY:", aiResponse.summary)
+        summaryText.textContent = aiResponse.summary
+        summaryContainer.classList.remove("hidden")
+        toggleSummaryBtn.textContent = "Hide Summary"
+        setStatus("Summary ready.")
+        
+        // Status update for user
+        setStatus("Reading summary...")
 
-          // Status update for user
-          setStatus("Reading summary...")
-
-          // Trigger speech playback
-          chrome.runtime.sendMessage({
-            type: "PLAY_SPEECH",
-            text: aiResponse.summary
-          })
+        // Trigger speech playback
+        //
+        // NOTE FOR TTS TEAM:
+        // background.js should listen for PLAY_SPEECH and
+        // call speak(message.text)
+        chrome.runtime.sendMessage({
+          type: "PLAY_SPEECH",
+          text: aiResponse.summary
+        })
         }
       )
     }
@@ -168,6 +187,9 @@ btnReadSelection.addEventListener("click", async () => {
 
       console.log("SELECTED TEXT:", response.text)
       setStatus("Summarizing selection...")
+      summaryContainer.classList.remove("hidden")
+      toggleSummaryBtn.textContent = "Hide Summary"
+      setStatus("Summary ready.")
 
       chrome.runtime.sendMessage(
         {
@@ -189,10 +211,7 @@ btnReadSelection.addEventListener("click", async () => {
           }
 
           console.log("AI SUMMARY:", aiResponse.summary)
-
-          // Show summary text in the popup
-          showSummary(aiResponse.summary)
-
+          summaryText.textContent = aiResponse.summary
           setStatus("Reading selection summary...")
 
           // Trigger speech playback
