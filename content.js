@@ -95,6 +95,7 @@ function stopSpeech() {
   window.speechSynthesis.cancel()
 }
 
+const MAX_PAGE_TEXT_LENGTH = 50000
 
 // ─── LISTEN FOR MESSAGES FROM POPUP.JS / BACKGROUND.JS ───────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -121,7 +122,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // some selectors might fail on certain pages, skip them silently
       }
     })
-    const pageText = clone.innerText.trim().slice(0, 50000);
+    const pageText = clone.innerText.trim().slice(0, MAX_PAGE_TEXT_LENGTH);
     sendResponse({ text: pageText });
   }
 
